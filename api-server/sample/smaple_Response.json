@@ -1,0 +1,25 @@
+{
+  "page_id": 1,
+  "url": "https://4fstore.lv/viriesi/parlukot-pec-pielietojuma/sportstyle.html",
+  "visits_last_7_days": 300,
+  "unique_visitors_last_7_days": 150,
+  "trend_percentage": 10.5,
+  "navigation_stats": [
+    {
+      "destination_page_id": 2,
+      "transition_count": 200,
+      "avg_time_between_pages": 5.5,
+      "last_visit_timestamp": { "value": "2023-05-01T12:00:00.000Z" },
+      "destination_url": "https://4fstore.lv/trekinga-saite-ar-vilnas-piedevu-unisex-h4z2-opu01-90s.html",
+      "destination_category": "Product"
+    },
+    {
+      "destination_page_id": 3,
+      "transition_count": 100,
+      "avg_time_between_pages": 4.3,
+      "last_visit_timestamp": { "value": "2023-05-01T13:00:00.000Z" },
+      "destination_url": "https://4fstore.lv/izpardosana/page-6.html",
+      "destination_category": "Sale"
+    }
+  ]
+}
