@@ -3,7 +3,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@src/*": ["src/*"]
+      "@src/*": ["src/*"],
+      "types": ["@types/recharts"]
     }
   },
   "include": ["src", "utils", "vite.config.mts", "../node_modules/@types"]

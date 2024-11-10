@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface NavigationStat {
   destination_page_id: number;
@@ -22,8 +23,7 @@ const App: React.FC = () => {
   const [apiData, setApiData] = useState<ApiResponse | null>(null);
 
   useEffect(() => {
-    // Fetch data from the API on component mount
-    fetch(`http://localhost:3000/page_data?url=${window.location.href}`)
+    fetch(`http://localhost:3000/page_data?url=${encodeURIComponent(window.location.href)}`)
       .then(response => {
         if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -33,6 +33,16 @@ const App: React.FC = () => {
       .then((data: ApiResponse) => setApiData(data))
       .catch(error => console.error('Error fetching data:', error));
   }, []);
+
+  // Helper function to extract the URL path without the domain
+  const getPathFromUrl = (url: string) => {
+    try {
+      const urlObj = new URL(url);
+      return urlObj.pathname;
+    } catch (error) {
+      return url; // fallback to full URL if parsing fails
+    }
+  };
 
   return (
     <div style={styles.sidebar}>
@@ -84,6 +94,25 @@ const App: React.FC = () => {
               </p>
             </div>
           ))}
+
+          <h2>Transition Count Chart</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart
+              data={apiData.navigation_stats.map(stat => ({
+                ...stat,
+                destination_path: getPathFromUrl(stat.destination_url),
+              }))}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="destination_path" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="transition_count" fill="#8884d8">
+                {apiData.navigation_stats.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.transition_count > 150 ? '#82ca9d' : '#8884d8'} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       ) : (
         <p>Loading...</p>

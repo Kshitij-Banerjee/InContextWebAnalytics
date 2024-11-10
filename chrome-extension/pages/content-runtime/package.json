@@ -19,8 +19,14 @@
     "type-check": "tsc --noEmit"
   },
   "devDependencies": {
-    "@extension/tsconfig": "workspace:*",
     "@extension/hmr": "workspace:*",
+    "@extension/tsconfig": "workspace:*",
     "@extension/vite-config": "workspace:*"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^5.5.1",
+    "@types/recharts": "^1.8.29",
+    "antd": "^5.21.6",
+    "recharts": "^2.13.3"
   }
 }
