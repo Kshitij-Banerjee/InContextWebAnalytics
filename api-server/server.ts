@@ -36,8 +36,9 @@ app.get(
       // Step 1: Find the page_id for the given URL without type structure in params
       const pageIdQuery = `
       SELECT page_id
-      FROM page_analytics.page_dimension
+      FROM page_analytics.page_nodes
       WHERE url = @url
+			ORDER BY page_id asc
       LIMIT 1;
     `;
       const [pageIdResult] = await bigquery.query({
@@ -57,7 +58,7 @@ app.get(
         visits_last_7_days,
         unique_visitors_last_7_days,
         trend_percentage
-      FROM page_analytics.page_dimension
+      FROM page_analytics.page_nodes
       WHERE page_id = @pageId;
     `;
       const [pageDataResult] = await bigquery.query({
@@ -73,7 +74,7 @@ app.get(
         transition_count,
         avg_time_between_pages,
         last_visit_timestamp
-      FROM page_analytics.page_navigation_dag
+      FROM page_analytics.page_node_transitions
       WHERE source_page_id = @pageId
       ORDER BY transition_count DESC
       LIMIT 5;
@@ -89,7 +90,7 @@ app.get(
       );
       const destinationPagesQuery = `
       SELECT page_id, url, page_category
-      FROM page_analytics.page_dimension
+      FROM page_analytics.page_nodes
       WHERE page_id IN UNNEST(@destinationPageIds);
     `;
       const [destinationPagesResult] = await bigquery.query({
