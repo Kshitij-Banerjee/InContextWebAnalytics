@@ -1,5 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import {
+  BarChart,
+  LineChart,
+  Line,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from 'recharts';
 
 interface NavigationStat {
   destination_page_id: number;
@@ -46,29 +57,31 @@ const App: React.FC = () => {
 
   return (
     <div style={styles.sidebar}>
-      <h1>Page Data</h1>
+      <h1 style={styles.header}>Page Data</h1>
       {apiData ? (
-        <div>
-          <p>
-            <strong>Page ID:</strong> {apiData.page_id}
-          </p>
-          <p>
-            <strong>URL:</strong>{' '}
-            <a href={apiData.url} target="_blank" rel="noopener noreferrer">
-              {apiData.url}
-            </a>
-          </p>
-          <p>
-            <strong>Visits Last 7 Days:</strong> {apiData.visits_last_7_days}
-          </p>
-          <p>
-            <strong>Unique Visitors Last 7 Days:</strong> {apiData.unique_visitors_last_7_days}
-          </p>
-          <p>
-            <strong>Trend Percentage:</strong> {apiData.trend_percentage}%
-          </p>
+        <div style={styles.content}>
+          <div style={styles.infoSection}>
+            <p>
+              <strong>Page ID:</strong> {apiData.page_id}
+            </p>
+            <p>
+              <strong>URL:</strong>{' '}
+              <a href={apiData.url} target="_blank" rel="noopener noreferrer">
+                {apiData.url}
+              </a>
+            </p>
+            <p>
+              <strong>Visits Last 7 Days:</strong> {apiData.visits_last_7_days}
+            </p>
+            <p>
+              <strong>Unique Visitors Last 7 Days:</strong> {apiData.unique_visitors_last_7_days}
+            </p>
+            <p>
+              <strong>Trend Percentage:</strong> {apiData.trend_percentage}%
+            </p>
+          </div>
 
-          <h2>Navigation Stats</h2>
+          <h2 style={styles.subHeader}>Navigation Stats</h2>
           {apiData.navigation_stats.map(stat => (
             <div key={stat.destination_page_id} style={styles.navigationStat}>
               <p>
@@ -95,7 +108,7 @@ const App: React.FC = () => {
             </div>
           ))}
 
-          <h2>Transition Count Chart</h2>
+          <h2 style={styles.subHeader}>Transition Count Chart</h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart
               data={apiData.navigation_stats.map(stat => ({
@@ -113,13 +126,34 @@ const App: React.FC = () => {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+
+          <h2 style={styles.subHeader}>Visits Trend on Last 7 days</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={dummyData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="last_visit_date" />
+              <YAxis />
+              <Tooltip />
+              <Line type="monotone" dataKey="no_of_visitors" stroke="#ff7300" />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
       ) : (
-        <p>Loading...</p>
+        <p style={styles.loading}>Loading...</p>
       )}
     </div>
   );
 };
+
+
+const dummyData = Array.from({ length: 7 }, (_, index) => {
+  const date = new Date();
+  date.setDate(date.getDate() - (6 - index)); // Start from 7 days ago and end today
+  return {
+    last_visit_date: date.toLocaleDateString(),
+    no_of_visitors: Math.floor(Math.random() * 100) + 50, // Random time between 50 and 150 seconds
+  };
+});
 
 const styles = {
   sidebar: {
@@ -128,19 +162,49 @@ const styles = {
     right: 0,
     width: '33vw',
     height: '100vh',
-    backgroundColor: '#f5f5f5',
+    background: 'linear-gradient(to bottom, #f5f5f5, #e0e0e0)',
     padding: '16px',
     boxShadow: '-2px 0 5px rgba(0,0,0,0.1)',
     zIndex: 1000,
     overflowY: 'auto' as const,
+    fontFamily: 'Arial, sans-serif',
+  },
+  header: {
+    fontSize: '24px',
+    marginBottom: '16px',
+    color: '#333',
+    background: 'linear-gradient(to right, #ff7e5f, #feb47b)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+  },
+  subHeader: {
+    fontSize: '20px',
+    marginTop: '24px',
+    marginBottom: '12px',
+    color: '#555',
+    background: 'linear-gradient(to right, #6a11cb, #2575fc)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+  },
+  content: {
+    padding: '8px',
+    backgroundColor: '#fff',
+    borderRadius: '8px',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+  },
+  infoSection: {
+    marginBottom: '16px',
   },
   navigationStat: {
     marginBottom: '16px',
-    padding: '8px',
+    padding: '12px',
     border: '1px solid #ddd',
-    borderRadius: '4px',
-    backgroundColor: '#fff',
+    borderRadius: '8px',
+    background: 'linear-gradient(to right, #f9f9f9, #e0e0e0)',
+  },
+  loading: {
+    fontSize: '18px',
+    color: '#888',
   },
 };
-
 export default App;
