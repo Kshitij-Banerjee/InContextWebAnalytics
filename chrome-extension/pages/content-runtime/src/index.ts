@@ -1,5 +1,5 @@
 import { mount } from '@src/Root';
-import 'antd/dist/antd.css';
+import 'antd/dist/reset.css';
 
 mount();
 console.log('runtime script loaded');

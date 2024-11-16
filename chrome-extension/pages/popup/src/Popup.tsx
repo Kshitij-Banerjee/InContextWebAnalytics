@@ -35,24 +35,25 @@ const Popup = () => {
           chrome.notifications.create('inject-error', notificationOptions);
         }
       });
+
+    // Close the popup after injecting the script
+    window.close();
   };
 
   return (
     <div className={`App ${isLight ? 'bg-slate-50' : 'bg-gray-800'}`}>
       <header className={`App-header ${isLight ? 'text-gray-900' : 'text-gray-100'}`}>
-        <button onClick={goGithubSite}>
-          <img src={chrome.runtime.getURL(logo)} className="App-logo" alt="logo" />
-        </button>
-        <p>
-          Edit <code>pages/popup/src/Popup.tsx</code>
-        </p>
+        {/* <button onClick={goGithubSite}> */}
+        {/* <img src={chrome.runtime.getURL(logo)} className="App-logo" alt="logo" /> */}
+        {/* </button> */}
+        <p>In context Clickstream analytics</p>
         <button
           className={
             'font-bold mt-4 py-1 px-4 rounded shadow hover:scale-105 ' +
             (isLight ? 'bg-blue-200 text-black' : 'bg-gray-700 text-white')
           }
           onClick={injectContentScript}>
-          Click to inject Content Script
+          Click to show analytics
         </button>
         <ToggleButton>Toggle theme</ToggleButton>
       </header>

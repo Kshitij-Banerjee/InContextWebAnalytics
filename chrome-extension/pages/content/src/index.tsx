@@ -1,6 +1,5 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import './styles.css'; // Ensure this file contains the necessary styles
 
 const Sidebar: React.FC = () => {
   return (

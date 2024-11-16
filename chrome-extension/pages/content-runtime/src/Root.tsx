@@ -3,7 +3,6 @@ import App from '@src/App';
 // eslint-disable-next-line
 // @ts-ignore
 import injectedStyle from '@src/index.css?inline';
-
 export function mount() {
   const root = document.createElement('div');
   root.id = 'chrome-extension-boilerplate-react-vite-runtime-content-view-root';
@@ -39,7 +38,18 @@ export function mount() {
   }
 
   shadowRoot.appendChild(rootIntoShadow);
-  createRoot(rootIntoShadow).render(<App />);
+
+  createRoot(rootIntoShadow).render(
+    <App
+      onClose={() => {
+        root.remove();
+        const styleElement = document.querySelector('style');
+        if (styleElement) {
+          styleElement.innerHTML = styleElement.innerHTML.replace(/width: 66vw;/, '');
+        }
+      }}
+    />,
+  );
 }
 
 // export function mount() {
