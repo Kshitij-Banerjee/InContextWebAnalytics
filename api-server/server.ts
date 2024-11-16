@@ -76,7 +76,7 @@ app.get(
       WHERE source_page_id IN UNNEST(@pageIds)
       AND destination_page_id NOT IN UNNEST(@pageIds)
       ORDER BY transition_count DESC
-      LIMIT 5;
+      LIMIT 20;
     `;
       const [navigationStatsResult] = await bigquery.query({
         query: navigationStatsQuery,
@@ -117,17 +117,82 @@ app.get(
         };
         return map;
       }, {} as Record<number, { url: string; page_category: string }>);
-
-      const enrichedNavigationStats = navigationStatsResult.map((row) => ({
-        destination_page_id: row.destination_page_id,
-        transition_count: row.transition_count,
-        avg_time_between_pages: row.avg_time_between_pages,
-        last_visit_timestamp: row.last_visit_timestamp,
-        destination_url:
-          destinationPageMap[row.destination_page_id]?.url || null,
-        destination_category:
-          destinationPageMap[row.destination_page_id]?.page_category || null,
+      // Step 6: Retrieve and sum visit_count from page_time_series for the given URL
+      const timeSeriesQuery = `
+					SELECT SUM(visit_count) as total_visits, visit_date
+					FROM page_analytics.page_time_series
+					WHERE url = @url
+					GROUP BY visit_date;
+			`;
+      const [timeSeriesResult] = await bigquery.query({
+        query: timeSeriesQuery,
+        params: { url },
+      });
+      const visit_stats = timeSeriesResult.map((row) => ({
+        visit_date: row.visit_date.value,
+        total_visits: row.total_visits,
       }));
+
+      interface UrlGroupedStat {
+        transition_count: number;
+        avg_time_between_pages: number;
+        last_visit_timestamp: string;
+        count: number;
+        destination_category: string | null;
+      }
+
+      const urlGroupedStats: Record<string, UrlGroupedStat> =
+        navigationStatsResult.reduce((acc, row) => {
+          const destinationPage = destinationPageMap[row.destination_page_id];
+          if (!destinationPage) {
+            console.warn(
+              `Destination page not found for ID: ${row.destination_page_id}`
+            );
+            return acc;
+          }
+
+          if (!destinationPage.url) return acc;
+          const url = (() => {
+            try {
+              return new URL(destinationPage.url).pathname.replace(/\/$/, "");
+            } catch (error) {
+              console.warn(
+                `Invalid URL skipped: ${destinationPage.url}`,
+                error
+              );
+              return null;
+            }
+          })();
+
+          if (!url) return acc;
+
+          if (!acc[url]) {
+            acc[url] = {
+              transition_count: 0,
+              avg_time_between_pages: 0,
+              last_visit_timestamp: row.last_visit_timestamp,
+              count: 0,
+              destination_category: destinationPage.page_category || null,
+            } as UrlGroupedStat;
+          }
+
+          acc[url].transition_count += row.transition_count;
+          acc[url].avg_time_between_pages += row.avg_time_between_pages;
+          acc[url].last_visit_timestamp = row.last_visit_timestamp;
+          acc[url].count += 1;
+
+          return acc;
+        }, {} as Record<string, UrlGroupedStat>);
+
+      const enrichedNavigationStats = Object.entries(urlGroupedStats).map(
+        ([url, data]) => ({
+          destination_url: url,
+          transition_count: data.transition_count,
+          avg_time_between_pages: data.avg_time_between_pages / data.count,
+          last_visit_timestamp: data.last_visit_timestamp,
+          destination_category: data.destination_category,
+        })
+      );
 
       // Step 6: Return the page data and enriched navigation stats
       return res.json({
@@ -137,6 +202,7 @@ app.get(
         unique_visitors_last_7_days: pageData.unique_visitors_last_7_days,
         trend_percentage: pageData.trend_percentage || null, // Assuming trend_percentage might be undefined
         navigation_stats: enrichedNavigationStats,
+        visit_stats: visit_stats, // Added total visits from time series
       });
     } catch (error) {
       console.error("Error retrieving page data:", error);

@@ -43,7 +43,12 @@ export function mount() {
     <App
       onClose={() => {
         root.remove();
-        document.querySelector('style')?.remove(); // Remove the injected style
+
+        const styleElement = document.querySelector('style');
+        if (styleElement) {
+          styleElement.innerHTML = styleElement.innerHTML.replace(/width: 66vw;/, '');
+        }
+
       }}
     />,
   );
