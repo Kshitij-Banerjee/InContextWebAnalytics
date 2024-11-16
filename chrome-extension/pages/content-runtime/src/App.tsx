@@ -1,3 +1,4 @@
+
 import { ArrowDownOutlined, ArrowUpOutlined, ReloadOutlined } from '@ant-design/icons';
 import React, { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
@@ -29,11 +30,15 @@ interface ApiResponse {
 interface AppProps {
   onClose: () => void;
 }
+interface AppProps {
+  onClose: () => void;
+}
 
 const App: React.FC<AppProps> = props => {
   const [apiData, setApiData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [hoveredUrl, setHoveredUrl] = useState<string | null>(null);
+
   const matchingLinks = React.useRef<HTMLElement[]>([]); // Track matching links
   useEffect(() => {
     // Cleanup function to reset styles and remove labels
@@ -52,6 +57,7 @@ const App: React.FC<AppProps> = props => {
     return cleanupMatchedLinks;
   }, []); // Empty dependency array ensures cleanup happens on unmount
 
+
   const fetchData = () => {
     setLoading(true);
     fetch(`http://localhost:3000/page_data?url=${encodeURIComponent(window.location.href)}`)
@@ -62,10 +68,12 @@ const App: React.FC<AppProps> = props => {
         return response.json();
       })
       .then((data: ApiResponse) => {
+
         setApiData({
           ...data,
           navigation_stats: data.navigation_stats.filter(stat => stat.destination_url !== null),
         });
+
         setLoading(false);
       })
       .catch(error => {
@@ -91,6 +99,7 @@ const App: React.FC<AppProps> = props => {
       }
     };
   }, [hoveredUrl]);
+
   useEffect(() => {
     // Cleanup previous styles and labels
     const cleanupMatchedLinks = () => {
@@ -172,6 +181,21 @@ const App: React.FC<AppProps> = props => {
     };
   }, []);
 
+
+    const observer = new MutationObserver(() => {
+      const currentUrl = window.location.href;
+      if (currentUrl !== lastUrl) {
+        lastUrl = currentUrl;
+        fetchData();
+      }
+    });
+
+    observer.observe(document, { subtree: true, childList: true });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
   // Helper function to extract the URL path without the domain
   const getPathFromUrl = (url: string) => {
     try {
@@ -184,6 +208,7 @@ const App: React.FC<AppProps> = props => {
 
   return (
     <div style={styles.sidebar}>
+
       <button
         onClick={fetchData}
         style={{
@@ -216,6 +241,7 @@ const App: React.FC<AppProps> = props => {
       {loading ? (
         <p> Loading ... </p>
       ) : apiData ? (
+
         <div>
           <p>
             <strong>Page ID:</strong> {apiData.page_id}
@@ -279,6 +305,7 @@ const App: React.FC<AppProps> = props => {
           </ResponsiveContainer>
 
           <h2>Navigation Stat Details</h2>
+
           {apiData.navigation_stats.map(stat => (
             <div key={stat.destination_page_id} style={styles.navigationStat} data-url={stat.destination_url}>
               <p>
@@ -319,6 +346,16 @@ const App: React.FC<AppProps> = props => {
   );
 };
 
+
+const dummyData = Array.from({ length: 7 }, (_, index) => {
+  const date = new Date();
+  date.setDate(date.getDate() - (6 - index)); // Start from 7 days ago and end today
+  return {
+    last_visit_date: date.toLocaleDateString(),
+    no_of_visitors: Math.floor(Math.random() * 100) + 50, // Random time between 50 and 150 seconds
+  };
+});
+
 const styles = {
   sidebar: {
     position: 'fixed' as const,
@@ -326,19 +363,57 @@ const styles = {
     right: 0,
     width: '33vw',
     height: '100vh',
-    backgroundColor: '#f5f5f5',
+    background: 'linear-gradient(to bottom, #f5f5f5, #e0e0e0)',
     padding: '16px',
     boxShadow: '-2px 0 5px rgba(0,0,0,0.1)',
     zIndex: 1000,
     overflowY: 'auto' as const,
-    marginBottom: '48px', // Added margin bottom
+    fontFamily: 'Arial, sans-serif',
+    marginBottom: '48px',
+
+  },
+  header: {
+    fontSize: '24px',
+    marginBottom: '16px',
+    color: '#333',
+    background: 'linear-gradient(to right, #ff7e5f, #feb47b)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+  },
+  subHeader: {
+    fontSize: '20px',
+    marginTop: '24px',
+    marginBottom: '12px',
+    color: '#555',
+    background: 'linear-gradient(to right, #6a11cb, #2575fc)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+  },
+  content: {
+    padding: '8px',
+    backgroundColor: '#fff',
+    borderRadius: '8px',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+  },
+  infoSection: {
+    marginBottom: '16px',
   },
   navigationStat: {
     marginBottom: '16px',
-    padding: '8px',
+    padding: '12px',
     border: '1px solid #ddd',
-    borderRadius: '4px',
-    backgroundColor: '#fff',
+    borderRadius: '8px',
+    background: 'linear-gradient(to right, #f9f9f9, #e0e0e0)',
+  },
+  loading: {
+    fontSize: '18px',
+    color: '#888',
+  },
+  reloadButton: {
+    marginBottom: '16px',
+    padding: '8px 16px',
+    fontSize: '16px',
+    cursor: 'pointer',
   },
   reloadButton: {
     marginBottom: '16px',
@@ -347,5 +422,4 @@ const styles = {
     cursor: 'pointer',
   },
 };
-
 export default App;

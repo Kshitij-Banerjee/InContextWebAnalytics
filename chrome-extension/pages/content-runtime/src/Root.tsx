@@ -43,10 +43,12 @@ export function mount() {
     <App
       onClose={() => {
         root.remove();
+
         const styleElement = document.querySelector('style');
         if (styleElement) {
           styleElement.innerHTML = styleElement.innerHTML.replace(/width: 66vw;/, '');
         }
+
       }}
     />,
   );
