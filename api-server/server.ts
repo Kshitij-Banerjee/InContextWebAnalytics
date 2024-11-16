@@ -33,41 +33,39 @@ app.get(
     try {
       const { url } = req.query as { url: string };
 
-      // Step 1: Find the page_id for the given URL without type structure in params
-      const pageIdQuery = `
+      // Step 1: Find all page_ids for the given URL without type structure in params
+      const pageIdsQuery = `
       SELECT page_id
       FROM page_analytics.page_nodes
       WHERE url = @url
-			ORDER BY page_id asc
-      LIMIT 1;
+      ORDER BY page_id asc;
     `;
-      const [pageIdResult] = await bigquery.query({
-        query: pageIdQuery,
+      const [pageIdsResult] = await bigquery.query({
+        query: pageIdsQuery,
         params: { url }, // Pass 'url' directly as a string
       });
-      const pageIdRow = pageIdResult[0];
+      const pageIds = pageIdsResult.map((row) => row.page_id);
 
-      if (!pageIdRow) {
+      if (pageIds.length === 0) {
         return res.status(404).json({ error: "Page not found" });
       }
-      const pageId = pageIdRow.page_id;
 
-      // Step 2: Retrieve page-specific data from page_dimension
+      // Step 2: Retrieve the sum of visits and unique visitors for all the pages
       const pageDataQuery = `
       SELECT 
-        visits_last_7_days,
-        unique_visitors_last_7_days,
-        trend_percentage
+        SUM(visits_last_7_days) as visits_last_7_days,
+        SUM(unique_visitors_last_7_days) as unique_visitors_last_7_days,
+        SUM(trend_percentage * visits_last_7_days) / SUM(visits_last_7_days) as trend_percentage
       FROM page_analytics.page_nodes
-      WHERE page_id = @pageId;
+      WHERE page_id IN UNNEST(@pageIds);
     `;
       const [pageDataResult] = await bigquery.query({
         query: pageDataQuery,
-        params: { pageId }, // Pass 'pageId' directly
+        params: { pageIds }, // Pass 'pageIds' directly
       });
       const pageData = pageDataResult[0];
 
-      // Step 3: Retrieve navigation stats from page_navigation_dag for transitions from this page
+      // Step 3: Retrieve navigation stats from page_navigation_dag for transitions from these pages
       const navigationStatsQuery = `
       SELECT 
         destination_page_id,
@@ -75,28 +73,39 @@ app.get(
         avg_time_between_pages,
         last_visit_timestamp
       FROM page_analytics.page_node_transitions
-      WHERE source_page_id = @pageId
+      WHERE source_page_id IN UNNEST(@pageIds)
+      AND destination_page_id NOT IN UNNEST(@pageIds)
       ORDER BY transition_count DESC
       LIMIT 5;
     `;
       const [navigationStatsResult] = await bigquery.query({
         query: navigationStatsQuery,
-        params: { pageId },
+        params: { pageIds },
       });
 
-      // Step 4: Retrieve URLs and categories for each destination_page_id
-      const destinationPageIds = navigationStatsResult.map(
+      // Step 4: Retrieve URLs and categories for all destination_page_ids
+      const allDestinationPageIdsQuery = `
+      SELECT DISTINCT destination_page_id
+      FROM page_analytics.page_node_transitions
+      WHERE source_page_id IN UNNEST(@pageIds);
+    `;
+      const [allDestinationPageIdsResult] = await bigquery.query({
+        query: allDestinationPageIdsQuery,
+        params: { pageIds },
+      });
+      const allDestinationPageIds = allDestinationPageIdsResult.map(
         (row) => row.destination_page_id
       );
+
       const destinationPagesQuery = `
       SELECT page_id, url, page_category
       FROM page_analytics.page_nodes
-      WHERE page_id IN UNNEST(@destinationPageIds);
+      WHERE page_id IN UNNEST(@allDestinationPageIds);
     `;
       const [destinationPagesResult] = await bigquery.query({
         query: destinationPagesQuery,
         params: {
-          destinationPageIds,
+          allDestinationPageIds,
         },
       });
 
@@ -122,11 +131,11 @@ app.get(
 
       // Step 6: Return the page data and enriched navigation stats
       return res.json({
-        page_id: pageId,
-        url,
+        page_id: pageIds[0], // Assuming pageIds is an array and using the first element
+        url: destinationPageMap[pageIds[0]]?.url || null, // Assuming the URL is needed for the first pageId
         visits_last_7_days: pageData.visits_last_7_days,
         unique_visitors_last_7_days: pageData.unique_visitors_last_7_days,
-        trend_percentage: pageData.trend_percentage,
+        trend_percentage: pageData.trend_percentage || null, // Assuming trend_percentage might be undefined
         navigation_stats: enrichedNavigationStats,
       });
     } catch (error) {

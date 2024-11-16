@@ -133,6 +133,7 @@ const styles = {
     boxShadow: '-2px 0 5px rgba(0,0,0,0.1)',
     zIndex: 1000,
     overflowY: 'auto' as const,
+    marginBottom: '16px', // Added margin bottom
   },
   navigationStat: {
     marginBottom: '16px',
