@@ -1,3 +1,4 @@
+import { ReloadOutlined } from '@ant-design/icons';
 import React, { useEffect, useState } from 'react';
 import {
   BarChart,
@@ -29,11 +30,17 @@ interface ApiResponse {
   trend_percentage: number;
   navigation_stats: NavigationStat[];
 }
+interface AppProps {
+  onClose: () => void;
+}
 
-const App: React.FC = () => {
+const App: React.FC<AppProps> = props => {
   const [apiData, setApiData] = useState<ApiResponse | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [hoveredUrl, setHoveredUrl] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchData = () => {
+    setLoading(true);
     fetch(`http://localhost:3000/page_data?url=${encodeURIComponent(window.location.href)}`)
       .then(response => {
         if (!response.ok) {
@@ -41,10 +48,51 @@ const App: React.FC = () => {
         }
         return response.json();
       })
-      .then((data: ApiResponse) => setApiData(data))
-      .catch(error => console.error('Error fetching data:', error));
-  }, []);
+      .then((data: ApiResponse) => {
+        setApiData(data);
+        setLoading(false);
+      })
+      .catch(error => {
+        setLoading(false);
+        console.error('Error fetching data:', error);
+      });
+  };
+  useEffect(() => {
+    if (hoveredUrl) {
+      const element = document.querySelector(`[data-url="${hoveredUrl}"]`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        element.classList.add('highlight');
+      }
+    }
 
+    return () => {
+      if (hoveredUrl) {
+        const element = document.querySelector(`[data-url="${hoveredUrl}"]`);
+        if (element) {
+          element.classList.remove('highlight');
+        }
+      }
+    };
+  }, [hoveredUrl]);
+
+  useEffect(() => {
+    let lastUrl = window.location.href;
+
+    const observer = new MutationObserver(() => {
+      const currentUrl = window.location.href;
+      if (currentUrl !== lastUrl) {
+        lastUrl = currentUrl;
+        fetchData();
+      }
+    });
+
+    observer.observe(document, { subtree: true, childList: true });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
   // Helper function to extract the URL path without the domain
   const getPathFromUrl = (url: string) => {
     try {
@@ -57,8 +105,39 @@ const App: React.FC = () => {
 
   return (
     <div style={styles.sidebar}>
-      <h1 style={styles.header}>Page Data</h1>
-      {apiData ? (
+
+      <button
+        onClick={fetchData}
+        style={{
+          ...styles.reloadButton,
+          position: 'absolute',
+          top: '10px',
+          right: '10px',
+          padding: '5px',
+          border: 'none',
+          background: 'transparent',
+        }}>
+        <ReloadOutlined style={{ fontSize: '20px', color: '#007bff' }} />
+      </button>
+      <button
+        onClick={props.onClose}
+        style={{
+          position: 'absolute',
+          top: '10px',
+          right: '50px',
+          padding: '5px',
+          border: 'none',
+          background: 'transparent',
+          fontSize: '20px',
+          cursor: 'pointer',
+        }}>
+        &times;
+      </button>
+
+      <h1>Page Data</h1>
+      {loading ? (
+        <p> Loading ... </p>
+      ) : apiData ? (
         <div style={styles.content}>
           <div style={styles.infoSection}>
             <p>
@@ -66,7 +145,7 @@ const App: React.FC = () => {
             </p>
             <p>
               <strong>URL:</strong>{' '}
-              <a href={apiData.url} target="_blank" rel="noopener noreferrer">
+              <a href={apiData.url} rel="noopener noreferrer">
                 {apiData.url}
               </a>
             </p>
@@ -81,9 +160,10 @@ const App: React.FC = () => {
             </p>
           </div>
 
+
           <h2 style={styles.subHeader}>Navigation Stats</h2>
           {apiData.navigation_stats.map(stat => (
-            <div key={stat.destination_page_id} style={styles.navigationStat}>
+            <div key={stat.destination_page_id} style={styles.navigationStat} data-url={stat.destination_url}>
               <p>
                 <strong>Destination Page ID:</strong> {stat.destination_page_id}
               </p>
@@ -98,7 +178,11 @@ const App: React.FC = () => {
               </p>
               <p>
                 <strong>Destination URL:</strong>{' '}
-                <a href={stat.destination_url} target="_blank" rel="noopener noreferrer">
+                <a
+                  href={stat.destination_url}
+                  onMouseEnter={() => setHoveredUrl(stat.destination_url)}
+                  onMouseLeave={() => setHoveredUrl(null)}
+                  rel="noopener noreferrer">
                   {stat.destination_url}
                 </a>
               </p>
@@ -168,6 +252,7 @@ const styles = {
     zIndex: 1000,
     overflowY: 'auto' as const,
     fontFamily: 'Arial, sans-serif',
+    marginBottom: '48px',
   },
   header: {
     fontSize: '24px',
@@ -205,6 +290,12 @@ const styles = {
   loading: {
     fontSize: '18px',
     color: '#888',
+  },
+  reloadButton: {
+    marginBottom: '16px',
+    padding: '8px 16px',
+    fontSize: '16px',
+    cursor: 'pointer',
   },
 };
 export default App;
