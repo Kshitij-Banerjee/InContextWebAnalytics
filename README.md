@@ -20,7 +20,8 @@ In-Context web analytics
 - To start the API server,
   1. Navigate to the `api-server` folder.
   2. run `pnpm install` to install the necessary dependencies
-  3. run `npx tsx server.ts` to start the expressjs node api
+  3. Place the auth.json in the chrome-extension folder, and run `export GOOGLE_APPLICATION_CREDENTIALS='/path/to/your/client_secret.json'` on the terminal. 
+  4. run `npx tsx server.ts` to start the expressjs node api
  
 - To start the chrome extension,
   1. Navigate to the `chrome-extension` folder
