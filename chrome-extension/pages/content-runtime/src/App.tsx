@@ -1,4 +1,3 @@
-
 import { ArrowDownOutlined, ArrowUpOutlined, ReloadOutlined } from '@ant-design/icons';
 import React, { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
@@ -57,7 +56,6 @@ const App: React.FC<AppProps> = props => {
     return cleanupMatchedLinks;
   }, []); // Empty dependency array ensures cleanup happens on unmount
 
-
   const fetchData = () => {
     setLoading(true);
     fetch(`http://localhost:3000/page_data?url=${encodeURIComponent(window.location.href)}`)
@@ -68,7 +66,6 @@ const App: React.FC<AppProps> = props => {
         return response.json();
       })
       .then((data: ApiResponse) => {
-
         setApiData({
           ...data,
           navigation_stats: data.navigation_stats.filter(stat => stat.destination_url !== null),
@@ -181,21 +178,6 @@ const App: React.FC<AppProps> = props => {
     };
   }, []);
 
-
-    const observer = new MutationObserver(() => {
-      const currentUrl = window.location.href;
-      if (currentUrl !== lastUrl) {
-        lastUrl = currentUrl;
-        fetchData();
-      }
-    });
-
-    observer.observe(document, { subtree: true, childList: true });
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
   // Helper function to extract the URL path without the domain
   const getPathFromUrl = (url: string) => {
     try {
@@ -208,7 +190,6 @@ const App: React.FC<AppProps> = props => {
 
   return (
     <div style={styles.sidebar}>
-
       <button
         onClick={fetchData}
         style={{
@@ -241,7 +222,6 @@ const App: React.FC<AppProps> = props => {
       {loading ? (
         <p> Loading ... </p>
       ) : apiData ? (
-
         <div>
           <p>
             <strong>Page ID:</strong> {apiData.page_id}
@@ -346,7 +326,6 @@ const App: React.FC<AppProps> = props => {
   );
 };
 
-
 const dummyData = Array.from({ length: 7 }, (_, index) => {
   const date = new Date();
   date.setDate(date.getDate() - (6 - index)); // Start from 7 days ago and end today
@@ -370,7 +349,6 @@ const styles = {
     overflowY: 'auto' as const,
     fontFamily: 'Arial, sans-serif',
     marginBottom: '48px',
-
   },
   header: {
     fontSize: '24px',
